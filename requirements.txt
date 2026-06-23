@@ -1,2 +1,6 @@
 aiogram==3.20.0
+<<<<<<< HEAD
 aiohttp==3.11.11
+=======
+aiohttp==3.11.11
+>>>>>>> 3a767d3 (fix runtime)

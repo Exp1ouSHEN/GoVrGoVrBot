@@ -443,9 +443,12 @@ async def form(m: types.Message):
         f"💳 Оплатити тут:\n{pay_url}"
     )
     if ADMIN_ID:
-        await bot.send_message(
+    await bot.send_message(
         ADMIN_ID,
         f"""
+...
+"""
+    )
 📥 НОВА БРОНЬ
 
 👤 Ім'я: {d['name']}
