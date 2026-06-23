@@ -449,7 +449,7 @@ async def form(m: types.Message):
 ...
 """
     )
-📥 НОВА БРОНЬ
+print("📥 НОВА БРОНЬ")
 
 👤 Ім'я: {d['name']}
 📞 Телефон: {d['phone']}
