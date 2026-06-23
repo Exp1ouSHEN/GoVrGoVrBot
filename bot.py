@@ -12,6 +12,25 @@ from aiogram.types import (
     InlineKeyboardButton
 )
 
+# ---------------- DB ----------------
+conn = sqlite3.connect("bookings.db")
+cursor = conn.cursor()
+
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS bookings (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    date TEXT,
+    time INTEGER,
+    hours REAL,
+    name TEXT,
+    phone TEXT,
+    guests TEXT,
+    comment TEXT,
+    status TEXT DEFAULT 'pending'
+)
+""")
+conn.commit()
+
 # ---------------- MEMORY ----------------
 user_data = {}
 admin_reply = {}
