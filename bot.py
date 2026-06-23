@@ -450,7 +450,7 @@ async def form(m: types.Message):
 """
     )
 
-print(f"""
+text = f"""
 📥 НОВА БРОНЬ
 
 👤 Ім'я: {d['name']}
@@ -463,7 +463,9 @@ print(f"""
 
 💬 Коментар:
 {d['comment']}
-""")
+"""
+
+await bot.send_message(ADMIN_ID, text)
 
        
 # ---------------- RUN ----------------
