@@ -451,13 +451,13 @@ async def form(m: types.Message):
     )
 print("📥 НОВА БРОНЬ")
 
-text = f"👤 Ім'я: {d['name']}"
-📞 Телефон: {d['phone']}
-📅 Дата: {d['date']}
-⏰ Час: {d['time']}:00
-⌛ Годин: {d['hours']}
-🎮 Тариф: {TARIFFS[d['tariff']]['name']}
-👥 Гостей: {d['guests']}
+    👤 Ім'я: {d['name']}"
+    📞 Телефон: {d['phone']}
+    📅 Дата: {d['date']}
+    ⏰ Час: {d['time']}:00
+    ⌛ Годин: {d['hours']}
+    🎮 Тариф: {TARIFFS[d['tariff']]['name']}
+    👥 Гостей: {d['guests']}
 
 💬 Коментар:
 {d['comment']}
