@@ -1,5 +1,13 @@
 import os
 
-ADMIN_ID = int(os.getenv("ADMIN_ID"))
-BOT_TOKEN = os.getenv("8896694914:AAFhDFS8KPxmGBXiGdEk_wCX9bUmx0BHsAU")
-MONO_TOKEN = os.getenv("utLTpPIIfkPKgGs1U6Y_sbXwcxIhYIA1HLYpvwEc-N5s")
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+ADMIN_ID = os.getenv("ADMIN_ID")
+MONO_TOKEN = os.getenv("MONO_TOKEN")
+
+if not BOT_TOKEN:
+    raise ValueError("BOT_TOKEN is missing in environment variables")
+
+if ADMIN_ID:
+    ADMIN_ID = int(ADMIN_ID)
+else:
+    raise ValueError("ADMIN_ID is missing")
