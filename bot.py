@@ -451,7 +451,7 @@ async def form(m: types.Message):
     )
 print("📥 НОВА БРОНЬ")
 
-👤 Ім'я: {d['name']}
+text = f"👤 Ім'я: {d['name']}"
 📞 Телефон: {d['phone']}
 📅 Дата: {d['date']}
 ⏰ Час: {d['time']}:00
