@@ -418,41 +418,32 @@ async def form(m: types.Message):
 
     d["comment"] = m.text
 
-    tariff = d["tariff"]
-    hours = d["hours"]
+tariff = d["tariff"]
+hours = d["hours"]
 
-    price = TARIFFS[tariff]["prices"].get(hours)
-    deposit = round(price * 0.1)
+price = TARIFFS[tariff]["prices"].get(hours)
+deposit = round(price * 0.1)
 
-    cursor.execute("""
-        INSERT INTO bookings (date, time, hours, name, phone, guests, comment, status)
-        VALUES (?, ?, ?, ?, ?, ?, ?, 'pending')
-    """, (
-        d["date"], d["time"], d["hours"],
-        d["name"], d["phone"], d["guests"], d["comment"]
-    ))
-    conn.commit()
+cursor.execute("""
+    INSERT INTO bookings (date, time, hours, name, phone, guests, comment, status)
+    VALUES (?, ?, ?, ?, ?, ?, ?, 'pending')
+""", (
+    d["date"], d["time"], d["hours"],
+    d["name"], d["phone"], d["guests"], d["comment"]
+))
+conn.commit()
 
-    pay = await create_invoice(deposit, "GoVr бронювання")
-    pay_url = pay.get("pageUrl", "")
+pay = await create_invoice(deposit, "GoVr бронювання")
+pay_url = pay.get("pageUrl", "")
 
-    await m.answer(
-        f"✅ Бронь створено!\n\n"
-        f"💰 Сума: {price} грн\n"
-        f"💳 Передплата 10%: {deposit} грн\n\n"
-        f"💳 Оплатити тут:\n{pay_url}"
-    )
-    if ADMIN_ID:
-        await bot.send_message(
-        ADMIN_ID,
-        f"""
-...
-"""
-    )
+await m.answer(
+    f"✅ Бронь створено!\n\n"
+    f"💰 Сума: {price} грн\n"
+    f"💳 Передплата 10%: {deposit} грн\n\n"
+    f"💳 Оплатити тут:\n{pay_url}"
+)
 
-@dp.message(lambda m: m.from_user.id in user_data)
-async def form(m: types.Message):
-
+text = f"""
 📥 НОВА БРОНЬ
 
 👤 Ім'я: {d['name']}
@@ -466,6 +457,8 @@ async def form(m: types.Message):
 💬 Коментар:
 {d['comment']}
 """
+
+await bot.send_message(chat_id=ADMIN_ID, text=text)
 
        
 # ---------------- RUN ----------------
