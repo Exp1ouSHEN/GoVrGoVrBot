@@ -450,6 +450,8 @@ async def form(m: types.Message):
 """
     )
 
+@dp.message(lambda m: m.from_user.id in user_data)
+async def form(m: types.Message):
 text = f"""
 📥 НОВА БРОНЬ
 
@@ -464,8 +466,6 @@ text = f"""
 💬 Коментар:
 {d['comment']}
 """
-
-await bot.send_message(ADMIN_ID, text)
 
        
 # ---------------- RUN ----------------
