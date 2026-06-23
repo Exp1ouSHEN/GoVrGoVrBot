@@ -13,9 +13,7 @@ from aiogram.types import (
 
 # ---------------- CONFIG ----------------
 
-BOT_TOKEN = os.getenv("BOT_TOKEN")
-ADMIN_ID = int(os.getenv("ADMIN_ID", "0"))
-MONO_TOKEN = os.getenv("MONO_TOKEN")
+from config import BOT_TOKEN, ADMIN_ID, MONO_TOKEN
 
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
@@ -310,7 +308,32 @@ async def admin_answer(m: types.Message):
 
 # ---------------- RUN ----------------
 
+from aiohttp import web
+import os
+import asyncio
+
+async def health(request):
+    return web.Response(text="OK")
+
 async def main():
+    app = web.Application()
+    app.router.add_get("/", health)
+
+    runner = web.AppRunner(app)
+    await runner.setup()
+
+    port = int(os.getenv("PORT", 10000))
+
+    site = web.TCPSite(
+        runner,
+        host="0.0.0.0",
+        port=port
+    )
+
+    await site.start()
+
+    print(f"Web server started on {port}")
+
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
