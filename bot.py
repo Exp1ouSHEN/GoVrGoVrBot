@@ -452,7 +452,7 @@ async def form(m: types.Message):
 
 @dp.message(lambda m: m.from_user.id in user_data)
 async def form(m: types.Message):
-text = f"""
+
 📥 НОВА БРОНЬ
 
 👤 Ім'я: {d['name']}
