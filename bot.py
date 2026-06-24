@@ -318,7 +318,7 @@ import asyncio
 async def health(request):
     return web.Response(text="OK")
 
-async def main():
+aasync def main():
     app = web.Application()
     app.router.add_get("/", health)
 
@@ -336,8 +336,11 @@ async def main():
     await site.start()
 
     print(f"Web server started on {port}")
-    print("START POLLING")
 
+    print("DELETE WEBHOOK")
+    await bot.delete_webhook(drop_pending_updates=True)
+
+    print("START POLLING")
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
