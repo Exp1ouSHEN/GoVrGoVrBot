@@ -318,7 +318,7 @@ import asyncio
 async def health(request):
     return web.Response(text="OK")
 
-aasync def main():
+async def main():
     app = web.Application()
     app.router.add_get("/", health)
 
