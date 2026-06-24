@@ -223,6 +223,9 @@ async def form(m: types.Message):
     uid = m.from_user.id
     d = user_data[uid]
 
+    if m.text in ["🎮 Забронювати", "💰 Прайс", "📞 Адміністратор"]:
+        return
+
     if "name" not in d:
         d["name"] = m.text
         await m.answer("📞 Телефон:")
