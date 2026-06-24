@@ -336,6 +336,7 @@ async def main():
     await site.start()
 
     print(f"Web server started on {port}")
+    print("START POLLING")
 
     await dp.start_polling(bot)
 
