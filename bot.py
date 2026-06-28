@@ -44,6 +44,7 @@ conn.commit()
 user_data = {}
 admin_reply = {}
 admin_mode = {}
+wait_photo = {}
 
 # ---------------- FULL TARIFS (НЕ УРЕЗАНО) ----------------
 
@@ -71,24 +72,7 @@ WORK_END = 19
 
 # ---------------- PAY ----------------
 
-async def create_invoice(amount, desc):
-    url = "https://api.monobank.ua/api/merchant/invoice/create"
 
-    headers = {"X-Token": MONO_TOKEN}
-
-    payload = {
-        "amount": int(amount * 100),
-        "ccy": 980,
-        "merchantPaymInfo": {
-            "reference": "booking",
-            "destination": desc
-        },
-        "redirectUrl": "https://t.me/"
-    }
-
-    async with aiohttp.ClientSession() as session:
-        async with session.post(url, json=payload, headers=headers) as r:
-            return await r.json()
 
 # ---------------- UI ----------------
 
@@ -245,6 +229,22 @@ async def form(m: types.Message):
 
     price = TARIFFS[d["tariff"]]["prices"][d["hours"]]
     deposit = round(price * 0.1)
+    pay_kb = InlineKeyboardMarkup(
+    inline_keyboard=[
+        [
+            InlineKeyboardButton(
+                text="✅ Я оплатив",
+                callback_data="paid"
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                text="❌ Скасувати бронювання",
+                callback_data="cancel"
+            )
+        ]
+    ]
+)
 
     cursor.execute("""
         INSERT INTO bookings (date,time,hours,tariff,name,phone,guests,comment)
@@ -255,14 +255,21 @@ async def form(m: types.Message):
     ))
     conn.commit()
 
-    pay = await create_invoice(deposit, "GoVr бронь")
-
     await m.answer(
-        f"✅ Бронь створено!\n\n"
-        f"💰 Повна сума: {price}\n"
-        f"💳 Аванс 10%: {deposit}\n\n"
-        f"🔗 Оплата:\n{pay.get('pageUrl','')}"
-    )
+    f"""✅ Бронювання створено!
+
+💰 Повна сума: {price} грн
+💳 Передоплата (10%): {deposit} грн
+
+Оплатіть передоплату на картку:
+
+💳 IBAN: UA493220010000026001380009480
+ІПН/ЄДРПОУ: 3579512999
+
+Після оплати натисніть кнопку нижче.
+""",
+    reply_markup=pay_kb
+)
 
     text = f"""
 📥 НОВА БРОНЬ
@@ -308,6 +315,52 @@ async def admin_answer(m: types.Message):
 
     await bot.send_message(uid, f"💬 Адмін: {m.text}")
     await m.answer("✔️ Відправлено")
+
+
+# ---------------- PAYMENT ----------------
+
+@dp.callback_query(lambda c: c.data == "paid")
+async def paid(c: types.CallbackQuery):
+
+    wait_photo[c.from_user.id] = True
+
+    await c.message.answer("📷 Надішліть скріншот оплати.")
+    await c.answer()
+
+
+@dp.callback_query(lambda c: c.data == "cancel")
+async def cancel(c: types.CallbackQuery):
+
+    user_data.pop(c.from_user.id, None)
+    wait_photo.pop(c.from_user.id, None)
+
+    await c.message.answer("❌ Бронювання скасовано.")
+    await c.answer()
+
+
+@dp.message(lambda m: m.photo and m.from_user.id in wait_photo)
+async def payment_photo(m: types.Message):
+
+    wait_photo.pop(m.from_user.id)
+
+    await bot.send_photo(
+        ADMIN_ID,
+        m.photo[-1].file_id,
+        caption=f"""
+💳 Нова оплата
+
+👤 {m.from_user.full_name}
+📱 @{m.from_user.username}
+🆔 {m.from_user.id}
+
+Перевірте оплату.
+"""
+    )
+
+    await m.answer(
+        "✅ Скріншот отримано.\nАдміністратор перевірить оплату."
+    )
+
 
 # ---------------- RUN ----------------
 
