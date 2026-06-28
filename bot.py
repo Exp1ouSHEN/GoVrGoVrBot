@@ -202,10 +202,16 @@ async def hours(c: types.CallbackQuery):
 
 # ---------------- FORM ----------------
 
-@dp.message(lambda m: m.from_user.id in user_data)
+@dp.message(lambda m: m.text and m.from_user.id in user_data)
 async def form(m: types.Message):
     uid = m.from_user.id
     d = user_data[uid]
+
+    if uid in wait_photo:
+        return
+
+    if m.photo:
+        return
 
     if m.text in ["🎮 Забронювати", "💰 Прайс", "📞 Адміністратор"]:
         return
@@ -342,6 +348,7 @@ async def cancel(c: types.CallbackQuery):
 async def payment_photo(m: types.Message):
 
     wait_photo.pop(m.from_user.id)
+    user_data.pop(m.from_user.id, None)
 
     await bot.send_photo(
         ADMIN_ID,
