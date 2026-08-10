@@ -149,7 +149,7 @@ async def start(m: types.Message):
 async def price(m: types.Message):
     await m.answer(
         "💰 ПРАЙС:\n\n"
-        "🎮 LITE: 1h 500 / 2h 900 / 3h 300 / 4h 1600\n"
+        "🎮 LITE: 1h 500 / 2h 900 / 3h 1300 / 4h 1600\n"
         "🔥 VIP: 1h 700 / 2h 1300 / 3h 1800 / 4h 2300\n"
         "🎂 BIRTHDAY: 1.5h 2500 / 2h3000 /  3h4000 / 4h5000\n"
         "⭐ PARTY: 8000 (4h)"
