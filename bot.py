@@ -149,9 +149,9 @@ async def start(m: types.Message):
 async def price(m: types.Message):
     await m.answer(
         "💰 ПРАЙС:\n\n"
-        "🎮 LITE: 500 / 900 / 1300 / 1600\n"
-        "🔥 VIP: 700 / 1300 / 1800 / 2300\n"
-        "🎂 BIRTHDAY: 2500 / 3000 / 4000 / 5000\n"
+        "🎮 LITE: 1h 500 / 2h 900 / 3h 300 / 4h 1600\n"
+        "🔥 VIP: 1h 700 / 2h 1300 / 3h 1800 / 4h 2300\n"
+        "🎂 BIRTHDAY: 1.5h 2500 / 2h3000 /  3h4000 / 4h5000\n"
         "⭐ PARTY: 8000 (4h)"
     )
 
@@ -268,7 +268,8 @@ async def form(m: types.Message):
 💳 Передоплата (10%): {deposit} грн
 
 Оплатіть передоплату на картку:
-
+\
+Денис Ф. В.
 💳 IBAN: UA493220010000026001380009480
 ІПН/ЄДРПОУ: 3579512999
 
