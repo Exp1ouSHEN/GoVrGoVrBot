@@ -46,6 +46,9 @@ admin_reply = {}
 admin_mode = {}
 wait_photo = {}
 
+# Состояние этапа бронирования
+booking_step = {}
+
 # ---------------- FULL TARIFS (НЕ УРЕЗАНО) ----------------
 
 TARIFFS = {
@@ -171,22 +174,22 @@ async def book(m: types.Message):
     user_data[m.from_user.id] = {}
     await m.answer("📅 Оберіть дату:", reply_markup=get_dates())
 
+
 # ---------------- FLOW ----------------
 
 @dp.callback_query(lambda c: c.data.startswith("date:"))
 async def date(c: types.CallbackQuery):
     uid = c.from_user.id
 
-    # На всякий случай создаём состояние
-    if uid not in user_data:
-        user_data[uid] = {}
+    user_data[uid] = {
+        "date": c.data.split(":", 1)[1]
+    }
 
-    selected_date = c.data.split(":", 1)[1]
-    user_data[uid]["date"] = selected_date
+    booking_step[uid] = "time"
 
     await c.message.edit_text(
         "⏰ Оберіть час:",
-        reply_markup=get_times(selected_date)
+        reply_markup=get_times(user_data[uid]["date"])
     )
     await c.answer()
 
@@ -196,19 +199,16 @@ async def time(c: types.CallbackQuery):
     uid = c.from_user.id
 
     if uid not in user_data:
-        user_data[uid] = {}
+        await c.answer("❌ Почніть бронювання заново.", show_alert=True)
+        return
 
-    selected_time = int(c.data.split(":", 1)[1])
+    user_data[uid]["time"] = int(c.data.split(":", 1)[1])
+    booking_step[uid] = "tariff"
 
-    user_data[uid]["time"] = selected_time
-
-    # После выбора времени заменяем клавиатуру
-    # на выбор тарифа.
     await c.message.edit_text(
         "🎮 Оберіть тариф:",
         reply_markup=get_tariffs()
     )
-
     await c.answer()
 
 
@@ -217,24 +217,22 @@ async def tariff(c: types.CallbackQuery):
     uid = c.from_user.id
 
     if uid not in user_data:
-        user_data[uid] = {}
-
-    selected_tariff = c.data.split(":", 1)[1]
-
-    # Проверяем, что такой тариф реально существует
-    if selected_tariff not in TARIFFS:
-        await c.answer("❌ Тариф не знайдено", show_alert=True)
+        await c.answer("❌ Почніть бронювання заново.", show_alert=True)
         return
 
-    user_data[uid]["tariff"] = selected_tariff
+    t = c.data.split(":", 1)[1]
 
-    # После выбора тарифа показываем только
-    # доступную длительность именно этого тарифа.
+    if t not in TARIFFS:
+        await c.answer("❌ Тариф не знайдено.", show_alert=True)
+        return
+
+    user_data[uid]["tariff"] = t
+    booking_step[uid] = "hours"
+
     await c.message.edit_text(
-        f"{TARIFFS[selected_tariff]['name']}\n\n⏱ Оберіть кількість годин:",
-        reply_markup=get_hours(selected_tariff)
+        f"{TARIFFS[t]['name']}\n\n⏱ Оберіть кількість годин:",
+        reply_markup=get_hours(t)
     )
-
     await c.answer()
 
 
@@ -243,127 +241,234 @@ async def hours(c: types.CallbackQuery):
     uid = c.from_user.id
 
     if uid not in user_data:
-        user_data[uid] = {}
-
-    selected_hours = float(c.data.split(":", 1)[1])
+        await c.answer("❌ Почніть бронювання заново.", show_alert=True)
+        return
 
     tariff = user_data[uid].get("tariff")
 
     if not tariff or tariff not in TARIFFS:
+        await c.answer("❌ Спочатку оберіть тариф.", show_alert=True)
+        return
+
+    h = float(c.data.split(":", 1)[1])
+
+    if h not in TARIFFS[tariff]["prices"]:
         await c.answer(
-            "❌ Спочатку оберіть тариф.",
+            "❌ Така кількість годин недоступна.",
             show_alert=True
         )
         return
 
-    # Перевіряемо, що така тривалість є у вибраному тарифі
-    if selected_hours not in TARIFFS[tariff]["prices"]:
-        await c.answer(
-            "❌ Така тривалість недоступна для цього тарифу.",
-            show_alert=True
-        )
-        return
+    user_data[uid]["hours"] = h
+    booking_step[uid] = "name"
 
-    user_data[uid]["hours"] = selected_hours
-
-    await c.message.edit_text(
-        "👤 Введіть імʼя:"
-    )
-
+    await c.message.edit_text("👤 Введіть імʼя:")
     await c.answer()
 
-# ---------------- FORM ----------------
+# ---------------- BOOKING FORM ----------------
 
-@dp.message(lambda m: m.text and m.from_user.id in user_data)
-async def form(m: types.Message):
-    uid = m.from_user.id
-    d = user_data[uid]
-
-    if uid in wait_photo:
-        return
-
-    if m.photo:
-        return
-
-    if m.text in ["🎮 Забронювати", "💰 Прайс", "📞 Адміністратор"]:
-        return
-
-    if "name" not in d:
-        d["name"] = m.text
-        await m.answer("📞 Телефон:")
-        return
-
-    if "phone" not in d:
-        d["phone"] = m.text
-        await m.answer("👥 Гості:")
-        return
-
-    if "guests" not in d:
-        d["guests"] = m.text
-        await m.answer("💬 Коментар:")
-        return
-
-    d["comment"] = m.text
-
-    price = TARIFFS[d["tariff"]]["prices"][d["hours"]]
-    deposit = round(price * 0.1)
-    pay_kb = InlineKeyboardMarkup(
-    inline_keyboard=[
-        [
-            InlineKeyboardButton(
-                text="✅ Я оплатив",
-                callback_data="paid"
-            )
-        ],
-        [
-            InlineKeyboardButton(
-                text="❌ Скасувати бронювання",
-                callback_data="cancel"
-            )
-        ]
-    ]
+@dp.message(
+    lambda m: (
+        m.from_user.id in user_data
+        and booking_step.get(m.from_user.id) in {
+            "name",
+            "phone",
+            "guests",
+            "comment"
+        }
+    )
 )
+async def booking_form(m: types.Message):
 
-    cursor.execute("""
-        INSERT INTO bookings (date,time,hours,tariff,name,phone,guests,comment)
-        VALUES (?,?,?,?,?,?,?,?)
-    """, (
-        d["date"], d["time"], d["hours"], d["tariff"],
-        d["name"], d["phone"], d["guests"], d["comment"]
-    ))
-    conn.commit()
+    uid = m.from_user.id
+    step = booking_step.get(uid)
+    d = user_data.get(uid)
 
-    await m.answer(
-    f"""✅ Бронювання створено!
+    # Если состояния нет — ничего не делаем
+    if not d or not step:
+        return
+
+    # Не принимаем команды/кнопки меню как данные формы
+    if m.text in [
+        "🎮 Забронювати",
+        "💰 Прайс",
+        "📞 Адміністратор"
+    ]:
+        return
+
+    # ------------------------------------------------
+    # ИМЯ
+    # ------------------------------------------------
+
+    if step == "name":
+
+        if not m.text:
+            await m.answer("👤 Будь ласка, введіть імʼя текстом.")
+            return
+
+        d["name"] = m.text.strip()
+
+        booking_step[uid] = "phone"
+
+        await m.answer("📞 Введіть номер телефону:")
+        return
+
+    # ------------------------------------------------
+    # ТЕЛЕФОН
+    # ------------------------------------------------
+
+    if step == "phone":
+
+        if not m.text:
+            await m.answer("📞 Будь ласка, введіть номер телефону.")
+            return
+
+        d["phone"] = m.text.strip()
+
+        booking_step[uid] = "guests"
+
+        await m.answer("👥 Скільки буде гостей?")
+        return
+
+    # ------------------------------------------------
+    # ГОСТИ
+    # ------------------------------------------------
+
+    if step == "guests":
+
+        if not m.text:
+            await m.answer("👥 Вкажіть кількість гостей.")
+            return
+
+        d["guests"] = m.text.strip()
+
+        booking_step[uid] = "comment"
+
+        await m.answer(
+            "💬 Напишіть коментар до бронювання "
+            "або напишіть «-», якщо коментаря немає."
+        )
+        return
+
+    # ------------------------------------------------
+    # КОММЕНТАРИЙ
+    # ------------------------------------------------
+
+    if step == "comment":
+
+        if not m.text:
+            await m.answer("💬 Введіть коментар або «-».")
+            return
+
+        d["comment"] = m.text.strip()
+
+        # СРАЗУ меняем состояние, чтобы повторное сообщение
+        # не создало вторую бронь
+        booking_step.pop(uid, None)
+
+        # ------------------------------------------------
+        # СОЗДАНИЕ БРОНИ
+        # ------------------------------------------------
+
+        tariff = d["tariff"]
+        hours_value = d["hours"]
+
+        price = TARIFFS[tariff]["prices"][hours_value]
+        deposit = round(price * 0.1)
+
+        cursor.execute(
+            """
+            INSERT INTO bookings
+            (date, time, hours, tariff, name, phone, guests, comment)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                d["date"],
+                d["time"],
+                d["hours"],
+                d["tariff"],
+                d["name"],
+                d["phone"],
+                d["guests"],
+                d["comment"]
+            )
+        )
+
+        conn.commit()
+
+        # ------------------------------------------------
+        # КНОПКИ ОПЛАТЫ
+        # ------------------------------------------------
+
+        pay_kb = InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(
+                        text="✅ Я оплатив",
+                        callback_data="paid"
+                    )
+                ],
+                [
+                    InlineKeyboardButton(
+                        text="❌ Скасувати бронювання",
+                        callback_data="cancel"
+                    )
+                ]
+            ]
+        )
+
+        # ------------------------------------------------
+        # СООБЩЕНИЕ КЛИЕНТУ
+        # ------------------------------------------------
+
+        await m.answer(
+            f"""✅ Бронювання створено!
+
+📅 Дата: {d['date']}
+⏰ Час: {d['time']}:00
+🎮 Тариф: {TARIFFS[tariff]['name']}
+⌛ Тривалість: {d['hours']} год.
 
 💰 Повна сума: {price} грн
 💳 Передоплата (10%): {deposit} грн
 
 Оплатіть передоплату на картку:
-\
+
 Денис Ф. В.
 💳 IBAN: UA493220010000026001380009480
 ІПН/ЄДРПОУ: 3579512999
 
 Після оплати натисніть кнопку нижче.
 """,
-    reply_markup=pay_kb
-)
+            reply_markup=pay_kb
+        )
 
-    text = f"""
+        # ------------------------------------------------
+        # СООБЩЕНИЕ АДМИНУ
+        # ------------------------------------------------
+
+        text = f"""
 📥 НОВА БРОНЬ
 
 👤 {d['name']}
 📞 {d['phone']}
 📅 {d['date']} {d['time']}:00
-🎮 {TARIFFS[d['tariff']]['name']}
+🎮 {TARIFFS[tariff]['name']}
 ⌛ {d['hours']}h
 👥 {d['guests']}
 
 💬 {d['comment']}
+
+💰 Сума: {price} грн
+💳 Передоплата: {deposit} грн
 """
 
-    await bot.send_message(ADMIN_ID, text)
+        await bot.send_message(ADMIN_ID, text)
+
+        # После успешной записи удаляем данные формы
+        user_data.pop(uid, None)
+
+        return
 
 # ---------------- ADMIN CHAT ----------------
 
