@@ -572,8 +572,6 @@ async def hours(c: types.CallbackQuery):
     await c.answer()
 
 
-```python
-```python
 # ============================================================
 # BOOKING FORM
 # ============================================================
