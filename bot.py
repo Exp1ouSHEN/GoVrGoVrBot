@@ -57,6 +57,14 @@ TARIFFS = {
         "name": "🔥 VIP + PS5",
         "prices": {1: 700, 2: 1300, 3: 1800, 4: 2300}
     },
+    "2lite": {
+        "name": "🎮 2 ЗОНИ LITE",
+        "prices": {1: 1000, 2: 1800, 3: 2600, 4: 3200}
+    },
+    "2vip": {
+        "name": "🔥 2 ЗОНИ VIP + PS5",
+        "prices": {1: 1400, 2: 2600, 3: 3600, 4: 4600}
+    },
     "birthday": {
         "name": "🎂 ДЕНЬ НАРОДЖЕННЯ",
         "prices": {1.5: 2500, 2: 3000, 3: 4000, 4: 5000}
@@ -69,9 +77,6 @@ TARIFFS = {
 
 WORK_START = 10
 WORK_END = 19
-
-# ---------------- PAY ----------------
-
 
 
 # ---------------- UI ----------------
@@ -124,6 +129,8 @@ def get_tariffs():
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="🎮 LITE", callback_data="tariff:lite")],
         [InlineKeyboardButton(text="🔥 VIP + PS5", callback_data="tariff:vip")],
+        [InlineKeyboardButton(text="🎮 2 ЗОНИ LITE", callback_data="tariff:2lite")],
+        [InlineKeyboardButton(text="🔥 2 ЗОНИ VIP + PS5", callback_data="tariff:2vip")],
         [InlineKeyboardButton(text="🎂 ДЕНЬ НАРОДЖЕННЯ", callback_data="tariff:birthday")],
         [InlineKeyboardButton(text="⭐ VIP PARTY", callback_data="tariff:party")]
     ])
@@ -151,6 +158,8 @@ async def price(m: types.Message):
         "💰 ПРАЙС:\n\n"
         "🎮 LITE: 1h 500 / 2h 900 / 3h 1300 / 4h 1600\n"
         "🔥 VIP: 1h 700 / 2h 1300 / 3h 1800 / 4h 2300\n"
+        "🎮 2 ЗОНИ LITE: 1h 1000 / 2h 1800 / 3h 2600 / 4h 3200\n"
+        "🔥 2 ЗОНИ VIP: 1h 1400 / 2h 2600 / 3h 3600 / 4h 4600\n"
         "🎂 BIRTHDAY: 1.5h 2500 / 2h3000 /  3h4000 / 4h5000\n"
         "⭐ PARTY: 8000 (4h)"
     )
