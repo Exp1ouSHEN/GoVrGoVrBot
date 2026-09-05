@@ -176,37 +176,100 @@ async def book(m: types.Message):
 @dp.callback_query(lambda c: c.data.startswith("date:"))
 async def date(c: types.CallbackQuery):
     uid = c.from_user.id
-    user_data[uid]["date"] = c.data.split(":")[1]
 
-    await c.message.answer("⏰ Оберіть час:", reply_markup=get_times(user_data[uid]["date"]))
+    # На всякий случай создаём состояние
+    if uid not in user_data:
+        user_data[uid] = {}
+
+    selected_date = c.data.split(":", 1)[1]
+    user_data[uid]["date"] = selected_date
+
+    await c.message.edit_text(
+        "⏰ Оберіть час:",
+        reply_markup=get_times(selected_date)
+    )
     await c.answer()
+
 
 @dp.callback_query(lambda c: c.data.startswith("time:"))
 async def time(c: types.CallbackQuery):
     uid = c.from_user.id
-    user_data[uid]["time"] = int(c.data.split(":")[1])
 
-    await c.message.answer("🎮 Тариф:", reply_markup=get_tariffs())
+    if uid not in user_data:
+        user_data[uid] = {}
+
+    selected_time = int(c.data.split(":", 1)[1])
+
+    user_data[uid]["time"] = selected_time
+
+    # После выбора времени заменяем клавиатуру
+    # на выбор тарифа.
+    await c.message.edit_text(
+        "🎮 Оберіть тариф:",
+        reply_markup=get_tariffs()
+    )
+
     await c.answer()
+
 
 @dp.callback_query(lambda c: c.data.startswith("tariff:"))
 async def tariff(c: types.CallbackQuery):
     uid = c.from_user.id
-    t = c.data.split(":")[1]
 
-    user_data[uid]["tariff"] = t
+    if uid not in user_data:
+        user_data[uid] = {}
 
-    await c.message.answer("⏱ Години:", reply_markup=get_hours(t))
+    selected_tariff = c.data.split(":", 1)[1]
+
+    # Проверяем, что такой тариф реально существует
+    if selected_tariff not in TARIFFS:
+        await c.answer("❌ Тариф не знайдено", show_alert=True)
+        return
+
+    user_data[uid]["tariff"] = selected_tariff
+
+    # После выбора тарифа показываем только
+    # доступную длительность именно этого тарифа.
+    await c.message.edit_text(
+        f"{TARIFFS[selected_tariff]['name']}\n\n⏱ Оберіть кількість годин:",
+        reply_markup=get_hours(selected_tariff)
+    )
+
     await c.answer()
+
 
 @dp.callback_query(lambda c: c.data.startswith("hours:"))
 async def hours(c: types.CallbackQuery):
     uid = c.from_user.id
-    h = float(c.data.split(":")[1])
 
-    user_data[uid]["hours"] = h
+    if uid not in user_data:
+        user_data[uid] = {}
 
-    await c.message.answer("👤 Імʼя:")
+    selected_hours = float(c.data.split(":", 1)[1])
+
+    tariff = user_data[uid].get("tariff")
+
+    if not tariff or tariff not in TARIFFS:
+        await c.answer(
+            "❌ Спочатку оберіть тариф.",
+            show_alert=True
+        )
+        return
+
+    # Перевіряемо, що така тривалість є у вибраному тарифі
+    if selected_hours not in TARIFFS[tariff]["prices"]:
+        await c.answer(
+            "❌ Така тривалість недоступна для цього тарифу.",
+            show_alert=True
+        )
+        return
+
+    user_data[uid]["hours"] = selected_hours
+
+    await c.message.edit_text(
+        "👤 Введіть імʼя:"
+    )
+
     await c.answer()
 
 # ---------------- FORM ----------------
